@@ -1,11 +1,13 @@
 import asyncio
 import aiohttp
+from datetime import datetime
 
 
 BASE_URL = "http://ecomarket.local/api/v1"
 TOKEN = "TOKEN_AQUI"
 
 INTERVALO_BASE = 5
+INTERVALO_MAX = 60
 TIMEOUT = 10
 
 
@@ -15,6 +17,7 @@ class Observador:
 
 
 class MonitorInventario:
+
 
     def __init__(self):
         self._observadores = []
@@ -34,7 +37,10 @@ class MonitorInventario:
     def _notificar(self, inventario):
 
         for obs in self._observadores:
-            obs.actualizar(inventario)
+            try:
+                obs.actualizar(inventario)
+            except Exception as e:
+                print("Error en observador:", e)
 
 
     async def _consultar_inventario(self):
@@ -49,35 +55,89 @@ class MonitorInventario:
         if self._ultimo_etag:
             headers["If-None-Match"] = self._ultimo_etag
 
-        timeout = aiohttp.ClientTimeout(total=TIMEOUT)
+        try:
 
-        async with aiohttp.ClientSession(timeout=timeout) as session:
+            timeout = aiohttp.ClientTimeout(total=TIMEOUT)
 
-            async with session.get(url, headers=headers) as response:
+            async with aiohttp.ClientSession(timeout=timeout) as session:
 
-                if response.status == 200:
+                async with session.get(url, headers=headers) as response:
 
-                    data = await response.json()
+                    if response.status == 200:
 
-                    self._ultimo_etag = response.headers.get("ETag")
+                        data = await response.json()
 
-                    print("Inventario actualizado")
+                        self._ultimo_etag = response.headers.get("ETag")
 
-                    return data
+                        print("Inventario actualizado")
 
+                        self._intervalo = INTERVALO_BASE
 
-                elif response.status == 304:
-
-                    print("Sin cambios en inventario")
-
-                    return None
+                        return data
 
 
-                else:
+                    elif response.status == 304:
 
-                    print("Error:", response.status)
+                        print("Sin cambios en inventario")
 
-                    return None
+                        return None
+
+
+                    elif response.status == 503:
+
+                        print("Servidor no disponible (503). Aplicando backoff...")
+
+                        self._intervalo = min(self._intervalo * 2, INTERVALO_MAX)
+
+                        return None
+
+
+                    elif response.status in [400, 401]:
+
+                        print("Error de cliente:", response.status)
+
+                        return None
+
+
+                    else:
+
+                        print("Respuesta inesperada:", response.status)
+
+                        return None
+
+
+        except asyncio.TimeoutError:
+            print("Timeout al consultar inventario")
+
+
+        except aiohttp.ClientConnectionError:
+
+            print("Error de conexión con el servidor - usando datos simulados")
+
+            return {
+                "productos":[
+                    {
+                        "id":"PROD-001",
+                        "nombre":"Arroz Premium",
+                        "stock_actual":45,
+                        "stock_minimo":50,
+                        "status":"BAJO_MINIMO"
+                    },
+                    {
+                        "id":"PROD-002",
+                        "nombre":"Frijol",
+                        "stock_actual":100,
+                        "stock_minimo":50,
+                        "status":"OK"
+                    }
+                ]
+            }
+
+
+        except Exception as e:
+            print("Error inesperado:", e)
+
+        return None
 
 
     async def iniciar(self):
@@ -94,6 +154,14 @@ class MonitorInventario:
             await asyncio.sleep(self._intervalo)
 
 
+    def detener(self):
+        self._ejecutando = False
+
+
+# ==========================
+# MODULO COMPRAS
+# ==========================
+
 class ModuloCompras(Observador):
 
     def actualizar(self, inventario):
@@ -103,19 +171,56 @@ class ModuloCompras(Observador):
         for p in productos:
 
             if p.get("status") == "BAJO_MINIMO":
-                print("Producto bajo mínimo:", p.get("nombre"))
 
+                print("\n⚠ Producto bajo mínimo")
+
+                print("ID:", p.get("id"))
+                print("Nombre:", p.get("nombre"))
+                print("Stock:", p.get("stock_actual"))
+                print("Stock mínimo:", p.get("stock_minimo"))
+
+
+# ==========================
+# MODULO ALERTAS
+# ==========================
+
+class ModuloAlertas(Observador):
+
+    def actualizar(self, inventario):
+
+        productos = inventario.get("productos", [])
+
+        for p in productos:
+
+            if p.get("status") == "BAJO_MINIMO":
+
+                alerta = {
+                    "producto_id": p.get("id"),
+                    "stock_actual": p.get("stock_actual"),
+                    "stock_minimo": p.get("stock_minimo"),
+                    "timestamp": datetime.utcnow().isoformat()
+                }
+
+                print("\n🚨 Enviando alerta:", alerta)
+
+
+# ==========================
+# PROGRAMA PRINCIPAL
+# ==========================
 
 async def main():
 
     monitor = MonitorInventario()
 
     compras = ModuloCompras()
+    alertas = ModuloAlertas()
 
     monitor.suscribir(compras)
+    monitor.suscribir(alertas)
 
     await monitor.iniciar()
 
 
 if __name__ == "__main__":
+
     asyncio.run(main())
