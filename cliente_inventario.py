@@ -1,6 +1,7 @@
 import asyncio
 import aiohttp
 
+
 BASE_URL = "http://ecomarket.local/api/v1"
 TOKEN = "TOKEN_AQUI"
 
@@ -24,6 +25,10 @@ class MonitorInventario:
         self._observadores.append(obs)
 
 
+    def desuscribir(self, obs):
+        self._observadores.remove(obs)
+
+
     def _notificar(self, inventario):
 
         for obs in self._observadores:
@@ -35,21 +40,16 @@ class MonitorInventario:
         url = f"{BASE_URL}/inventario"
 
         headers = {
-            "Authorization": f"Bearer {TOKEN}",
-            "Accept": "application/json"
+            "Authorization": f"Bearer {TOKEN}"
         }
 
         async with aiohttp.ClientSession() as session:
 
             async with session.get(url, headers=headers) as response:
 
-                if response.status == 200:
+                data = await response.json()
 
-                    data = await response.json()
-
-                    return data
-
-        return None
+                return data
 
 
     async def iniciar(self):
