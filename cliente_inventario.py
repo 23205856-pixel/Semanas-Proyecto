@@ -6,6 +6,7 @@ BASE_URL = "http://ecomarket.local/api/v1"
 TOKEN = "TOKEN_AQUI"
 
 INTERVALO_BASE = 5
+TIMEOUT = 10
 
 
 class Observador:
@@ -17,6 +18,7 @@ class MonitorInventario:
 
     def __init__(self):
         self._observadores = []
+        self._ultimo_etag = None
         self._ejecutando = False
         self._intervalo = INTERVALO_BASE
 
@@ -40,16 +42,42 @@ class MonitorInventario:
         url = f"{BASE_URL}/inventario"
 
         headers = {
-            "Authorization": f"Bearer {TOKEN}"
+            "Authorization": f"Bearer {TOKEN}",
+            "Accept": "application/json"
         }
 
-        async with aiohttp.ClientSession() as session:
+        if self._ultimo_etag:
+            headers["If-None-Match"] = self._ultimo_etag
+
+        timeout = aiohttp.ClientTimeout(total=TIMEOUT)
+
+        async with aiohttp.ClientSession(timeout=timeout) as session:
 
             async with session.get(url, headers=headers) as response:
 
-                data = await response.json()
+                if response.status == 200:
 
-                return data
+                    data = await response.json()
+
+                    self._ultimo_etag = response.headers.get("ETag")
+
+                    print("Inventario actualizado")
+
+                    return data
+
+
+                elif response.status == 304:
+
+                    print("Sin cambios en inventario")
+
+                    return None
+
+
+                else:
+
+                    print("Error:", response.status)
+
+                    return None
 
 
     async def iniciar(self):
@@ -69,7 +97,13 @@ class MonitorInventario:
 class ModuloCompras(Observador):
 
     def actualizar(self, inventario):
-        print("Actualización recibida")
+
+        productos = inventario.get("productos", [])
+
+        for p in productos:
+
+            if p.get("status") == "BAJO_MINIMO":
+                print("Producto bajo mínimo:", p.get("nombre"))
 
 
 async def main():
