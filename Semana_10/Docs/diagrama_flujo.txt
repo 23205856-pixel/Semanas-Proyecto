@@ -1,0 +1,5 @@
+[1] El timeout del token manager
+[2] Salida A: Bloqueadas / Salida B: Cerrado / Salida C: Abierto
+[3] Pasa de Semi abierto a cerrado y reinicia el contador
+[4] No porque es multiplex y deberia soportar multiples conexiones y el CircuitBreaker solo ejecuta ciertas peticiones
+[5] No, debido a que se unen mediante el ClienteRobusto

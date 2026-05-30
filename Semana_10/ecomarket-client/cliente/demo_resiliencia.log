@@ -1,0 +1,30 @@
+2026-05-24 12:14:34,609 | [MOCK] Servidor activo en http://localhost:9000
+2026-05-24 12:14:34,610 | === ESCENARIO 1 ===
+2026-05-24 12:14:34,621 | ::1 [24/May/2026:12:14:34 -0700] "GET /api/inventario HTTP/1.1" 200 198 "-" "Python/3.12 aiohttp/3.13.5"
+2026-05-24 12:14:34,624 | [HTTP #1] 200 | productos=42 | CB=CERRADO | fallos=0
+2026-05-24 12:14:34,634 | ::1 [24/May/2026:12:14:34 -0700] "GET /api/inventario HTTP/1.1" 200 198 "-" "Python/3.12 aiohttp/3.13.5"
+2026-05-24 12:14:34,641 | [HTTP #2] 200 | productos=42 | CB=CERRADO | fallos=0
+2026-05-24 12:14:34,652 | ::1 [24/May/2026:12:14:34 -0700] "GET /api/inventario HTTP/1.1" 200 198 "-" "Python/3.12 aiohttp/3.13.5"
+2026-05-24 12:14:34,654 | [HTTP #3] 200 | productos=42 | CB=CERRADO | fallos=0
+2026-05-24 12:14:34,655 | === ESCENARIO 2 ===
+2026-05-24 12:14:34,669 | ::1 [24/May/2026:12:14:34 -0700] "GET /api/inventario HTTP/1.1" 503 189 "-" "Python/3.12 aiohttp/3.13.5"
+2026-05-24 12:14:34,672 | [HTTP ERROR] HTTP 503 | CB=CERRADO | fallos=1
+2026-05-24 12:14:34,679 | ::1 [24/May/2026:12:14:34 -0700] "GET /api/inventario HTTP/1.1" 503 189 "-" "Python/3.12 aiohttp/3.13.5"
+2026-05-24 12:14:34,681 | [HTTP ERROR] HTTP 503 | CB=CERRADO | fallos=2
+2026-05-24 12:14:34,689 | ::1 [24/May/2026:12:14:34 -0700] "GET /api/inventario HTTP/1.1" 503 189 "-" "Python/3.12 aiohttp/3.13.5"
+2026-05-24 12:14:34,690 | [HTTP ERROR] HTTP 503 | CB=CERRADO | fallos=3
+2026-05-24 12:14:34,692 | ::1 [24/May/2026:12:14:34 -0700] "GET /api/inventario HTTP/1.1" 503 189 "-" "Python/3.12 aiohttp/3.13.5"
+2026-05-24 12:14:34,693 | [HTTP ERROR] HTTP 503 | CB=CERRADO | fallos=4
+2026-05-24 12:14:34,699 | ::1 [24/May/2026:12:14:34 -0700] "GET /api/inventario HTTP/1.1" 503 189 "-" "Python/3.12 aiohttp/3.13.5"
+2026-05-24 12:14:34,701 | [UI] Circuito ABIERTO
+2026-05-24 12:14:34,701 | [HTTP ERROR] HTTP 503 | CB=ABIERTO | fallos=5
+2026-05-24 12:14:34,702 | [UI] Servidor temporalmente no disponible
+2026-05-24 12:14:34,702 | [BREAKER] OPEN | fail fast | restante=5.0s
+2026-05-24 12:14:34,703 | Esperando transici�n a SEMIABIERTO
+2026-05-24 12:14:40,711 | [CB] Estado actual: SEMIABIERTO
+2026-05-24 12:14:40,712 | === ESCENARIO 3 ===
+2026-05-24 12:14:40,726 | ::1 [24/May/2026:12:14:40 -0700] "GET /api/inventario HTTP/1.1" 200 198 "-" "Python/3.12 aiohttp/3.13.5"
+2026-05-24 12:14:40,731 | [UI] Conexi�n restaurada
+2026-05-24 12:14:40,732 | [RECOVERY] 200 | productos=42 | CB=CERRADO | fallos=0
+2026-05-24 12:14:40,733 | 
+Estado final \u2192 CB=CERRADO | fallos=0
